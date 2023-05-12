@@ -1,32 +1,52 @@
+// external libraries
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include "FastNoiseLite.h"
+
+// internal C libraries
 #include <stdbool.h>
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
-#include <iostream>
-#include <cstdlib>
-#include "FastNoiseLite.h"
 
+//#ifdef _WIN32
+//#include <direct.h>
+//#define GetCurrentDir _getcwd
+//#else
+//#include <unistd.h>
+//#define GetCurrentDir getcwd
+//#endif
+
+// internal C++ libraries
+#include <iostream>
+#include <filesystem>
+#include <cstdlib>
+#include <string>
+
+// SDL initialization
 SDL_Event event;
 SDL_Renderer *renderer;
 SDL_Rect dest_rect;
 SDL_Window *window;
 int windowWidth, windowHeight;
+SDL_Surface *image;
 
-SDL_Texture *texture_wool;
-SDL_Texture *texture_grass_block;
+// Texture initialization
+SDL_Texture *textures[3];
 
+std::string GamePath;
 float camx = 0;
-float camy = 0;
-int chunksum = 0;
+float camy = 4096;
 
 int16_t world[128][4096];
 
+SDL_Texture* nLoadTexture(std::string Path);
 void generateWorld();
 void renderBlocks();
 int16_t getTile(float getTileX, float getTileY);
 int nmod(int n, int m);
+
+FastNoiseLite noise;
 
 #ifdef _WIN32
 #include <windows.h>
@@ -36,23 +56,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 int main(int argc, char *argv[])
 #endif
 {
-    FastNoiseLite noise;
-    noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-    noise.SetFrequency(0.1f);
-    //for(int x = 0; x < 20; x++) { std::cout << noise.GetNoise((float) x) * 50.0 }
+    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+    
     // Initialize SDL2 and create a window and a renderer
     SDL_Init(SDL_INIT_VIDEO);
     window = SDL_CreateWindow("Minecraft 2D", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     // Load the image file as a texture
-    SDL_Surface *image = IMG_Load("Assets/wool.png");
-    texture_wool = SDL_CreateTextureFromSurface(renderer, image);
-    SDL_FreeSurface(image);
-    image = IMG_Load("Assets/grass.png");
-    texture_grass_block = SDL_CreateTextureFromSurface(renderer, image);
-    SDL_FreeSurface(image);
-
+    char *buf = SDL_GetBasePath();
+    GamePath = buf;
+    GamePath.append("Assets/");
+    SDL_free(buf);
+    
+    textures[1] = nLoadTexture("wool.png");
+    textures[2] = nLoadTexture("grass.png");
+    
     // Present the rendered frame on the screen
     SDL_RenderPresent(renderer);
     bool running = true;
@@ -89,7 +108,6 @@ int main(int argc, char *argv[])
     }
 
     // Destroy the texture, renderer, and window
-    SDL_DestroyTexture(texture_wool);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
@@ -100,18 +118,23 @@ int main(int argc, char *argv[])
 void generateWorld()
 {
     int16_t block = 0;
-    for(int i = 0; i < 128; i++) {
-        for(int j = 0; j < 4096; j++) {
-            world[i][j] = block;
-            srand(clock());
-            block = fmod(rand(), 3);
+    for(int j = 0; j < 4096; j++) {
+        //world[i][j] = block;
+        //srand(clock());
+        //block = fmod(rand(), 3);
+        block = (int16_t) (64 + (noise.GetNoise((float) j*2, 1.0f) * 10.0));
+        block += (int16_t) (noise.GetNoise((float) j*5, 1.0f) * 3.0);
+        for(int i = block; i > -1; i--) {
+            world[i][j] = 2;
+        }
+        for(int i = block+1; i < 128; i++) {
+            world[i][j] = 0;
         }
     }
 }
 
 void renderBlocks()
 {
-    chunksum = 0;
     int16_t tile;
     SDL_Texture *selected_texture;
     
@@ -123,17 +146,7 @@ void renderBlocks()
                                     64, 64 };
             tile = getTile( camx + (i * 64), camy + (j * 64) );
             if(tile > 0) {
-                switch (tile) {
-                    case 1:
-                        selected_texture = texture_wool;
-                        break;
-                    case 2:
-                        selected_texture = texture_grass_block;
-                        break;
-                    default:
-                        selected_texture = texture_wool;
-                }
-                SDL_RenderCopy(renderer, selected_texture, NULL, &dest_rect);
+                SDL_RenderCopy(renderer, textures[tile], NULL, &dest_rect);
             }
         }
     }
@@ -147,7 +160,18 @@ int16_t getTile(float getTileX, float getTileY)
     return world[(int) getTileY / 64][(int) getTileX / 64];
 }
 
-int nmod(int a, int b) {
+int nmod(int a, int b)
+{
     int r = a % b;
     return r < 0 ? r + b : r;
+}
+
+SDL_Texture* nLoadTexture(std::string Path)
+{
+    std::string TempPath = GamePath;
+    image = IMG_Load(TempPath.append(Path).c_str());
+    printf("Loaded texture: %s\n",TempPath.c_str());
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, image);
+    SDL_FreeSurface(image);
+    return texture;
 }
