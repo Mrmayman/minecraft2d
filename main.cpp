@@ -55,7 +55,8 @@ int nmod(int n, int m);
 
 struct Entity {
     int id = 0;
-    float x, y, speedX, speedY;
+    float x, y, speedX, speedY, newx, newy;
+    int16_t direction = 1;
 };
 Entity entities[1024];
 
@@ -67,7 +68,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 int main(int argc, char *argv[])
 #endif
 {
-    const float xspeed = 0.4;
+    const float xspeed = 0.02;
     //std::cout << "Enter world seed:";
     //std::cin >> seed;
     seed = 1;
@@ -93,9 +94,8 @@ int main(int argc, char *argv[])
         delta = current_time - last_time;
         last_time = current_time;
 
-        if (keyboard_state[SDL_SCANCODE_D]) { entities[0].speedX += xspeed; }
-        if (keyboard_state[SDL_SCANCODE_A]) { entities[0].speedX -= xspeed; }
-        if (keyboard_state[SDL_SCANCODE_W] && getTile(entities[0].x, entities[0].y - 4) > 0) { entities[0].speedY += 2;entities[0].y += 4; }
+        if (keyboard_state[SDL_SCANCODE_D]) { entities[0].speedX += xspeed * delta; }
+        if (keyboard_state[SDL_SCANCODE_A]) { entities[0].speedX -= xspeed * delta; }
         if (keyboard_state[SDL_SCANCODE_S]) { entities[0].speedY -= 1; }
 
         camx += (entities[0].x - camx) * delta/128;
@@ -148,11 +148,11 @@ void renderBlocks()
 {
     int16_t tile;
     SDL_Texture *selected_texture;
-    
+    SDL_Rect dest_rect;
     SDL_GetWindowSize(window, &windowWidth, &windowHeight);
     for(int i = (windowWidth / -128); i < ((windowWidth / 64) + 3); i++) {
         for(int j = (windowHeight / -128); j < (windowHeight / 64) + 3; j++) {
-            SDL_Rect dest_rect = { (windowWidth / 2) + (64 * i) - nmod(camx, 64) - 64,
+            dest_rect = { (windowWidth / 2) + (64 * i) - nmod(camx, 64) - 64,
                                    (windowHeight / 2) + (-64 * j) + nmod(camy, 64),
                                     64, 64 };
             tile = getTile( camx + (i * 64) - 64, camy + (j * 64) );
@@ -167,7 +167,7 @@ int16_t getTile(float getTileX, float getTileY)
 {
     if(getTileX < 0) { return 0; }
     if(getTileY < 0) { return 0; }
-    if(getTileY > (128 * 64)) { 0; }
+    if(getTileY > (127 * 64)) { return 0; }
     return world[(int) floor(getTileY / 64)][(int) floor(getTileX / 64)];
 }
 
@@ -181,7 +181,7 @@ SDL_Texture* nLoadTexture(std::string Path)
 {
     std::string TempPath = GamePath;
     image = IMG_Load(TempPath.append(Path).c_str());
-    printf("Loaded texture: %s\n",TempPath.c_str());
+    //printf("Loaded texture: %s\n",TempPath.c_str());
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, image);
     SDL_FreeSurface(image);
     return texture;
@@ -194,6 +194,7 @@ void nStartUp(FastNoiseLite tempnoise)
     // Initialize SDL2 and create a window and a renderer
     SDL_Init(SDL_INIT_VIDEO);
     window = SDL_CreateWindow("Minecraft 2D", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    //SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
     // Load the image file as a texture
@@ -213,30 +214,53 @@ void tickEntities(Uint32 tempdelta)
             break;
         }
         moveEntity(e, tempdelta);
-        entities[e].speedX *= 0.7;
-        entities[e].speedY -= 0.001;
-        entities[e].speedY *= 0.9;
-        SDL_Rect dest_rect = { (int) ((windowWidth / 2) + entities[e].x - camx - 16), (int) ((windowHeight / 2) + camy - entities[e].y), 8*4, 32*4 };
-        SDL_RenderCopy(renderer, entityTextures[entities[e].id - 1], NULL, &dest_rect);
+        entities[e].speedX *= 1 - (tempdelta * (1 - 0.98));
+        entities[e].speedY -= 0.01 * tempdelta;
+        if(entities[e].speedX < 0) {
+            entities[e].direction = -1;
+        } else if(entities[e].speedX > 0) {
+            entities[e].direction = 1;
+        }
+        SDL_RendererFlip flip;
+        if (entities[e].direction < 0) {
+            flip = SDL_FLIP_HORIZONTAL;
+        } else {
+            flip = SDL_FLIP_NONE;
+        }
+        SDL_Rect dest_rect = { (int) ((windowWidth / 2) + entities[e].x - camx - 16), (int) ((windowHeight / 2) + camy - entities[e].y - 64), 8*4, 32*4 };
+        SDL_RenderCopyEx(renderer, entityTextures[entities[e].id - 1], NULL, &dest_rect, 0, NULL, flip);
     }
 }
 
 void moveEntity(int tempentity, Uint32 tempdelta2)
 {
-    for(int i = (int) abs(entities[tempentity].speedX); i > 0; i--) {
-        entities[tempentity].x += tempdelta2 * (abs(entities[tempentity].speedX) / entities[tempentity].speedX);
-        if(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
-            i = 0;
-            entities[tempentity].x -= tempdelta2 * (abs(entities[tempentity].speedX) / entities[tempentity].speedX);
-            entities[tempentity].speedX = 0;
+    entities[tempentity].x += 0.4 * entities[tempentity].speedX * tempdelta2;
+    
+    // x collision
+    if(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
+        while(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
+            if(entities[tempentity].speedX < 0) {
+                entities[tempentity].x++;
+            } else {
+                entities[tempentity].x--;
+            }
+            entities[tempentity].x = floor(entities[tempentity].x);
         }
+        entities[tempentity].speedX = 0;
     }
-    for(float i = abs(entities[tempentity].speedY); i > 0; i--) {
-        entities[tempentity].y += tempdelta2 * (abs(entities[tempentity].speedY) / entities[tempentity].speedY);
-        if(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
-            i = 0;
-            entities[tempentity].y -= tempdelta2 * (abs(entities[tempentity].speedY) / entities[tempentity].speedY);
-            entities[tempentity].speedY = 0;
+    
+    entities[tempentity].y += 0.4 * entities[tempentity].speedY * tempdelta2;
+    
+    // y collision
+    if(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
+        while(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
+            if(entities[tempentity].speedY < 0) {
+                entities[tempentity].y++;
+            } else {
+                entities[tempentity].y--;
+            }
+            entities[tempentity].y = floor(entities[tempentity].y);
         }
+        entities[tempentity].speedY = ((entities[tempentity].id == 1) && keyboard_state[SDL_SCANCODE_W] && (entities[tempentity].speedY < 0)) * (3 * nmod(tempdelta2,2));
     }
 }
