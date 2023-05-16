@@ -32,6 +32,12 @@ int windowWidth, windowHeight;
 SDL_Surface *image;
 bool running;
 const Uint8 *keyboard_state;
+SDL_GameController* gameController = nullptr;
+
+int joyxa;
+int joyya;
+int joyxb;
+int joyyb;
 
 // Texture initialization
 SDL_Texture *textures[4];
@@ -96,7 +102,8 @@ int main(int argc, char *argv[])
 
         if (keyboard_state[SDL_SCANCODE_D]) { entities[0].speedX += xspeed * delta; }
         if (keyboard_state[SDL_SCANCODE_A]) { entities[0].speedX -= xspeed * delta; }
-        if (keyboard_state[SDL_SCANCODE_S]) { entities[0].speedY -= 1; }
+        joyxa = SDL_GameControllerGetAxis(gameController, SDL_CONTROLLER_AXIS_LEFTX);
+        joyya = SDL_GameControllerGetAxis(gameController, SDL_CONTROLLER_AXIS_LEFTY);
 
         camx += (entities[0].x - camx) * delta/128;
         camy += (entities[0].y - camy) * delta/128;
@@ -113,7 +120,11 @@ int main(int argc, char *argv[])
             if(event.type == SDL_QUIT) {
                 running = false;
             }
+            if (SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_A)) {
+                // Handle button A press
+            }
         }
+        entities[0].speedX += xspeed * (joyxa/32767) * delta;
         SDL_RenderPresent(renderer);
     }
 
@@ -193,6 +204,7 @@ void nStartUp(FastNoiseLite tempnoise)
     
     // Initialize SDL2 and create a window and a renderer
     SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_GAMECONTROLLER);
     window = SDL_CreateWindow("Minecraft 2D", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     //SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -205,6 +217,14 @@ void nStartUp(FastNoiseLite tempnoise)
     SDL_RenderPresent(renderer);
     running = true;
     keyboard_state = SDL_GetKeyboardState(NULL);
+    
+    if (SDL_NumJoysticks() >= 1) {
+        gameController = SDL_GameControllerOpen(0);
+        if (gameController == nullptr) {
+        // Failed to open game controller
+            std::cout << "No controllers detected\n";
+        }
+    }
 }
 
 void tickEntities(Uint32 tempdelta)
@@ -261,6 +281,10 @@ void moveEntity(int tempentity, Uint32 tempdelta2)
             }
             entities[tempentity].y = floor(entities[tempentity].y);
         }
-        entities[tempentity].speedY = ((entities[tempentity].id == 1) && keyboard_state[SDL_SCANCODE_W] && (entities[tempentity].speedY < 0)) * (3 * nmod(tempdelta2,2));
+        if(entities[tempentity].id == 1 && (keyboard_state[SDL_SCANCODE_W] or (joyya < -16000)) && entities[tempentity].speedY < 0) {
+            entities[tempentity].speedY = 3 * nmod(tempdelta2,2);
+        } else {
+            entities[tempentity].speedY = 0;
+        }
     }
 }
