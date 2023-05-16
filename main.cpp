@@ -9,13 +9,8 @@
 #include <stdio.h>
 #include <time.h>
 
-//#ifdef _WIN32
-//#include <direct.h>
-//#define GetCurrentDir _getcwd
-//#else
-//#include <unistd.h>
-//#define GetCurrentDir getcwd
-//#endif
+#include "nutils.h"
+#include "globals.h"
 
 // internal C++ libraries
 #include <iostream>
@@ -25,14 +20,8 @@
 
 // SDL initialization
 SDL_Event event;
-SDL_Renderer *renderer;
 SDL_Rect dest_rect;
-SDL_Window *window;
 int windowWidth, windowHeight;
-SDL_Surface *image;
-bool running;
-const Uint8 *keyboard_state;
-SDL_GameController* gameController = nullptr;
 
 int joyxa;
 int joyya;
@@ -43,7 +32,6 @@ int joyyb;
 SDL_Texture *textures[4];
 SDL_Texture *entityTextures[1];
 
-std::string GamePath;
 float camx = 0;
 float camy = 4096;
 int seed = 0;
@@ -99,6 +87,45 @@ int main(int argc, char *argv[])
         current_time = SDL_GetTicks();
         delta = current_time - last_time;
         last_time = current_time;
+        
+        /*bool isAPressed = SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_A);
+        triangle is top
+        square is left
+        circle is right
+        cross is down
+        trigger is interact
+        shoulder is hotbar
+
+        Triangle button -> SDL_CONTROLLER_BUTTON_Y
+        Circle button -> SDL_CONTROLLER_BUTTON_B
+        Cross button -> SDL_CONTROLLER_BUTTON_A
+        Square button -> SDL_CONTROLLER_BUTTON_X
+        SELECT button -> SDL_CONTROLLER_BUTTON_BACK
+        START button -> SDL_CONTROLLER_BUTTON_START
+        PS button -> SDL_CONTROLLER_BUTTON_GUIDE
+
+        SDL_CONTROLLER_BUTTON_A
+        SDL_CONTROLLER_BUTTON_B
+        SDL_CONTROLLER_BUTTON_X
+        SDL_CONTROLLER_BUTTON_Y
+
+        SDL_CONTROLLER_BUTTON_BACK
+        SDL_CONTROLLER_BUTTON_GUIDE
+        SDL_CONTROLLER_BUTTON_START
+
+        SDL_CONTROLLER_BUTTON_LEFTSTICK
+        SDL_CONTROLLER_BUTTON_RIGHTSTICK
+
+        SDL_CONTROLLER_BUTTON_LEFTSHOULDER
+        SDL_CONTROLLER_BUTTON_RIGHTSHOULDER
+
+        SDL_CONTROLLER_BUTTON_DPAD_UP
+        SDL_CONTROLLER_BUTTON_DPAD_DOWN
+        SDL_CONTROLLER_BUTTON_DPAD_LEFT
+        SDL_CONTROLLER_BUTTON_DPAD_RIGHT
+
+        SDL_CONTROLLER_BUTTON_LEFT_TRIGGER
+        SDL_CONTROLLER_BUTTON_RIGHT_TRIGGER*/
 
         if (keyboard_state[SDL_SCANCODE_D]) { entities[0].speedX += xspeed * delta; }
         if (keyboard_state[SDL_SCANCODE_A]) { entities[0].speedX -= xspeed * delta; }
@@ -180,51 +207,6 @@ int16_t getTile(float getTileX, float getTileY)
     if(getTileY < 0) { return 0; }
     if(getTileY > (127 * 64)) { return 0; }
     return world[(int) floor(getTileY / 64)][(int) floor(getTileX / 64)];
-}
-
-int nmod(int a, int b)
-{
-    int r = a % b;
-    return r < 0 ? r + b : r;
-}
-
-SDL_Texture* nLoadTexture(std::string Path)
-{
-    std::string TempPath = GamePath;
-    image = IMG_Load(TempPath.append(Path).c_str());
-    //printf("Loaded texture: %s\n",TempPath.c_str());
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, image);
-    SDL_FreeSurface(image);
-    return texture;
-}
-
-void nStartUp(FastNoiseLite tempnoise)
-{
-    tempnoise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    
-    // Initialize SDL2 and create a window and a renderer
-    SDL_Init(SDL_INIT_VIDEO);
-    SDL_Init(SDL_INIT_GAMECONTROLLER);
-    window = SDL_CreateWindow("Minecraft 2D", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    //SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-
-    // Load the image file as a texture
-    char *buf = SDL_GetBasePath();
-    GamePath = buf;
-    GamePath.append("Assets/");
-    SDL_free(buf);
-    SDL_RenderPresent(renderer);
-    running = true;
-    keyboard_state = SDL_GetKeyboardState(NULL);
-    
-    if (SDL_NumJoysticks() >= 1) {
-        gameController = SDL_GameControllerOpen(0);
-        if (gameController == nullptr) {
-        // Failed to open game controller
-            std::cout << "No controllers detected\n";
-        }
-    }
 }
 
 void tickEntities(Uint32 tempdelta)
