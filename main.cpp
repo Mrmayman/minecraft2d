@@ -50,6 +50,7 @@ void tickEntities(Uint32 tempdelta);
 void moveEntity(int tempentity, Uint32 tempdelta2);
 int16_t getTile(float getTileX, float getTileY);
 int nmod(int n, int m);
+const bool vsync = 1;
 
 struct Entity {
     int id = 0;
@@ -87,11 +88,32 @@ int main(int argc, char *argv[])
     entities[0].x = 62;
     entities[0].y = 69 * 64;
     
+    int frameCount = 0;
+    Uint32 lastFrameTime = SDL_GetTicks();
+    
     while(running) {
+        
+    // Calculate FPS
+        Uint32 currentFrameTime = SDL_GetTicks();
+        Uint32 elapsedFrameTime = currentFrameTime - lastFrameTime;
+    
+        if (elapsedFrameTime >= 1000) {
+            // One second has elapsed, so calculate FPS
+            float fps = frameCount / (elapsedFrameTime / 1000.0f);
+    
+            // Print the FPS value to the console
+            printf("FPS: %f\n", fps);
+    
+            // Reset the frame count and last frame time
+            frameCount = 0;
+            lastFrameTime = currentFrameTime;
+        }
+        frameCount++;
+    
         current_time = SDL_GetTicks();
         delta = current_time - last_time;
         last_time = current_time;
-
+        //std::cout << (bool) SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_A) << "\n";
         /*
         bool isAPressed = SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_A);
 if (isAPressed) {
@@ -238,7 +260,7 @@ void nStartUp(FastNoiseLite tempnoise)
     SDL_Init(SDL_INIT_GAMECONTROLLER);
     window = SDL_CreateWindow("Minecraft 2D", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     //SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | (SDL_RENDERER_PRESENTVSYNC * vsync));
 
     // Load the image file as a texture
     char *buf = SDL_GetBasePath();
