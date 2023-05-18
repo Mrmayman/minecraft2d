@@ -59,9 +59,13 @@ std::string GamePath;
 float camx = 0;
 float camy = 4096;
 int seed = 0;
+int xMouse;
+int yMouse;
 
+// arrays
 int16_t world[128][4096];
 
+// functions
 SDL_Texture* nLoadTexture(std::string Path);
 void nStartUp(FastNoiseLite tempnoise);
 void generateWorld(FastNoiseLite tempnoise);
@@ -70,6 +74,8 @@ void tickEntities(Uint32 tempdelta);
 void moveEntity(int tempentity, Uint32 tempdelta2);
 int16_t getTile(float getTileX, float getTileY);
 int nmod(int n, int m);
+
+// constants
 const bool vsync = 1;
 
 struct Entity {
@@ -95,6 +101,7 @@ int main(int argc, char *argv[])
     nStartUp(noise);
     
     entityTextures[0] = nLoadTexture("player.png");
+    textures[0] = nLoadTexture("selector.png");
     textures[1] = nLoadTexture("grass.png");
     textures[2] = nLoadTexture("dirt.png");
     textures[3] = nLoadTexture("stone.png");
@@ -105,8 +112,8 @@ int main(int argc, char *argv[])
     
     // spawn player
     entities[0].id = 1;
-    entities[0].x = 62;
-    entities[0].y = 69 * 64;
+    entities[0].x = 8 * 64;
+    entities[0].y = 66 * 64;
     
     int frameCount = 0;
     Uint32 lastFrameTime = SDL_GetTicks();
@@ -122,7 +129,7 @@ int main(int argc, char *argv[])
             float fps = frameCount / (elapsedFrameTime / 1000.0f);
     
             // Print the FPS value to the console
-            printf("FPS: %f\n", fps);
+            //printf("FPS: %f\n", fps);
     
             // Reset the frame count and last frame time
             frameCount = 0;
@@ -180,15 +187,30 @@ if (isAPressed) {
 
         camx += (entities[0].x - camx) * delta/128;
         camy += (entities[0].y - camy) * delta/128;
-        camx = std::max(camx, (float) (windowWidth / 2));
-        camx = std::max(camx, (float) (windowWidth / 2));
-        camy = std::max(camy, (float) (windowHeight / 2));
-        camy = std::min(camy, (float) ((128*64) - (windowHeight*1.3)));
 
         SDL_SetRenderDrawColor(renderer, 180, 200, 255, 255);
         SDL_RenderClear(renderer);
         renderBlocks();
         tickEntities(delta);
+        
+        SDL_GetGlobalMouseState(&xMouse,&yMouse);
+        int windowX, windowY;
+        SDL_GetWindowPosition(window, &windowX, &windowY);
+        xMouse -= windowX;
+        yMouse -= windowY;
+        
+        int selectedX = (64 * floor( (xMouse + camx) / 64 )) - camx;
+        int selectedY = windowHeight - ((64 * floor( ( (windowHeight - yMouse) + 16 + camy) / 64 )) - camy + 48);
+        int selectedBlockX = floor((selectedX + camx) / 64) - 4;
+        int selectedBlockY = floor((0 - selectedY + camy) / 64) + 4;
+        world[std::max(selectedBlockY, 0)][std::max(selectedBlockX,0)] = 0;
+        
+        SDL_Rect dest_rect = {
+            (int) (selectedX),
+            (int) (selectedY),
+            64, 64 };
+        SDL_RenderCopyEx(renderer, textures[0], NULL, &dest_rect, 0, NULL, SDL_FLIP_NONE);
+        
         while(SDL_PollEvent(&event)) {
             if(event.type == SDL_QUIT) {
                 running = false;

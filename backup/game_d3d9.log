@@ -1,0 +1,211 @@
+info:  Game: game.exe
+info:  DXVK: v2.1
+info:  Built-in extension providers:
+info:    Win32 WSI
+info:    OpenVR
+info:    OpenXR
+info:  OpenVR: could not open registry key, status 2
+info:  OpenVR: Failed to locate module
+info:  Vulkan: Found vkGetInstanceProcAddr in winevulkan.dll @ 0x2d4ad3eb0
+info:  Enabled instance extensions:
+info:    VK_KHR_get_surface_capabilities2
+info:    VK_KHR_surface
+info:    VK_KHR_win32_surface
+info:  D3D9: VK_FORMAT_D24_UNORM_S8_UINT -> VK_FORMAT_D32_SFLOAT_S8_UINT
+info:  Unknown AMD GPU:
+info:    Driver: 2.0.247
+info:    Vulkan: 1.3.232
+info:    Memory Heap[0]: 
+info:      Size: 3072 MiB
+info:      Flags: 0x0
+info:      Memory Type[1]: Property Flags = 0x6
+info:      Memory Type[3]: Property Flags = 0xe
+info:      Memory Type[5]: Property Flags = 0xc6
+info:      Memory Type[7]: Property Flags = 0xce
+info:    Memory Heap[1]: 
+info:      Size: 2048 MiB
+info:      Flags: 0x3
+info:      Memory Type[0]: Property Flags = 0x1
+info:      Memory Type[2]: Property Flags = 0x7
+info:      Memory Type[4]: Property Flags = 0xc1
+info:      Memory Type[6]: Property Flags = 0xc7
+info:  Process set as DPI aware
+info:  D3D9: VK_FORMAT_D24_UNORM_S8_UINT -> VK_FORMAT_D32_SFLOAT_S8_UINT
+info:  Unknown AMD GPU:
+info:    Driver: 2.0.247
+info:    Vulkan: 1.3.232
+info:    Memory Heap[0]: 
+info:      Size: 3072 MiB
+info:      Flags: 0x0
+info:      Memory Type[1]: Property Flags = 0x6
+info:      Memory Type[3]: Property Flags = 0xe
+info:      Memory Type[5]: Property Flags = 0xc6
+info:      Memory Type[7]: Property Flags = 0xce
+info:    Memory Heap[1]: 
+info:      Size: 2048 MiB
+info:      Flags: 0x3
+info:      Memory Type[0]: Property Flags = 0x1
+info:      Memory Type[2]: Property Flags = 0x7
+info:      Memory Type[4]: Property Flags = 0xc1
+info:      Memory Type[6]: Property Flags = 0xc7
+info:  Process set as DPI aware
+info:  Device properties:
+info:    Device name:     : Unknown AMD GPU
+info:    Driver version   : 2.0.247
+info:  Enabled device extensions:
+info:    VK_AMD_memory_overallocation_behavior
+info:    VK_AMD_shader_fragment_mask
+info:    VK_EXT_conservative_rasterization
+info:    VK_EXT_custom_border_color
+info:    VK_EXT_depth_clip_enable
+info:    VK_EXT_memory_priority
+info:    VK_EXT_non_seamless_cube_map
+info:    VK_EXT_robustness2
+info:    VK_EXT_shader_stencil_export
+info:    VK_EXT_transform_feedback
+info:    VK_EXT_vertex_attribute_divisor
+info:    VK_KHR_pipeline_library
+info:    VK_KHR_swapchain
+info:  Device features:
+info:    robustBufferAccess                     : 1
+info:    fullDrawIndexUint32                    : 1
+info:    imageCubeArray                         : 1
+info:    independentBlend                       : 1
+info:    geometryShader                         : 1
+info:    tessellationShader                     : 0
+info:    sampleRateShading                      : 1
+info:    dualSrcBlend                           : 0
+info:    logicOp                                : 0
+info:    multiDrawIndirect                      : 0
+info:    drawIndirectFirstInstance              : 0
+info:    depthClamp                             : 1
+info:    depthBiasClamp                         : 1
+info:    fillModeNonSolid                       : 1
+info:    depthBounds                            : 1
+info:    multiViewport                          : 1
+info:    samplerAnisotropy                      : 1
+info:    textureCompressionBC                   : 1
+info:    occlusionQueryPrecise                  : 1
+info:    pipelineStatisticsQuery                : 1
+info:    vertexPipelineStoresAndAtomics         : 1
+info:    fragmentStoresAndAtomics               : 0
+info:    shaderImageGatherExtended              : 0
+info:    shaderClipDistance                     : 1
+info:    shaderCullDistance                     : 1
+info:    shaderFloat64                          : 0
+info:    shaderInt64                            : 0
+info:    variableMultisampleRate                : 1
+info:    shaderResourceResidency                : 0
+info:    shaderResourceMinLod                   : 0
+info:    sparseBinding                          : 0
+info:    sparseResidencyBuffer                  : 0
+info:    sparseResidencyImage2D                 : 0
+info:    sparseResidencyImage3D                 : 0
+info:    sparseResidency2Samples                : 0
+info:    sparseResidency4Samples                : 0
+info:    sparseResidency8Samples                : 0
+info:    sparseResidency16Samples               : 0
+info:    sparseResidencyAliased                 : 0
+info:  Vulkan 1.1
+info:    shaderDrawParameters                   : 0
+info:  Vulkan 1.2
+info:    samplerMirrorClampToEdge               : 1
+info:    drawIndirectCount                      : 1
+info:    samplerFilterMinmax                    : 0
+info:    hostQueryReset                         : 1
+info:    timelineSemaphore                      : 1
+info:    bufferDeviceAddress                    : 0
+info:    shaderOutputViewportIndex              : 1
+info:    shaderOutputLayer                      : 1
+info:    vulkanMemoryModel                      : 1
+info:  Vulkan 1.3
+info:    robustImageAccess                      : 0
+info:    pipelineCreationCacheControl           : 1
+info:    shaderDemoteToHelperInvocation         : 1
+info:    shaderZeroInitializeWorkgroupMemory    : 0
+info:    synchronization2                       : 1
+info:    dynamicRendering                       : 1
+info:  VK_AMD_shader_fragment_mask
+info:    extension supported                    : 1
+info:  VK_EXT_attachment_feedback_loop_layout
+info:    attachmentFeedbackLoopLayout           : 0
+info:  VK_EXT_conservative_rasterization
+info:    extension supported                    : 1
+info:  VK_EXT_custom_border_color
+info:    customBorderColors                     : 1
+info:    customBorderColorWithoutFormat         : 1
+info:  VK_EXT_depth_clip_enable
+info:    depthClipEnable                        : 1
+info:  VK_EXT_extended_dynamic_state3
+info:    extDynamicState3AlphaToCoverageEnable  : 0
+info:    extDynamicState3DepthClipEnable        : 0
+info:    extDynamicState3RasterizationSamples   : 0
+info:    extDynamicState3SampleMask             : 0
+info:  VK_EXT_fragment_shader_interlock
+info:    fragmentShaderSampleInterlock          : 0
+info:    fragmentShaderPixelInterlock           : 0
+info:  VK_EXT_full_screen_exclusive
+info:    extension supported                    : 0
+info:  VK_EXT_graphics_pipeline_library
+info:    graphicsPipelineLibrary                : 0
+info:  VK_EXT_memory_budget
+info:    extension supported                    : 1
+info:  VK_EXT_memory_priority
+info:    memoryPriority                         : 1
+info:  VK_EXT_non_seamless_cube_map
+info:    nonSeamlessCubeMap                     : 1
+info:  VK_EXT_robustness2
+info:    robustBufferAccess2                    : 1
+info:    robustImageAccess2                     : 1
+info:    nullDescriptor                         : 1
+info:  VK_EXT_shader_module_identifier
+info:    shaderModuleIdentifier                 : 0
+info:  VK_EXT_shader_stencil_export
+info:    extension supported                    : 1
+info:  VK_EXT_swapchain_colorspace
+info:    extension supported                    : 0
+info:  VK_EXT_hdr_metadata
+info:    extension supported                    : 0
+info:  VK_EXT_transform_feedback
+info:    transformFeedback                      : 0
+info:    geometryStreams                        : 0
+info:  VK_EXT_vertex_attribute_divisor
+info:    vertexAttributeInstanceRateDivisor     : 1
+info:    vertexAttributeInstanceRateZeroDivisor : 1
+info:  VK_KHR_external_memory_win32
+info:    extension supported                    : 0
+info:  VK_KHR_external_semaphore_win32
+info:    extension supported                    : 0
+info:  VK_NVX_binary_import
+info:    extension supported                    : 0
+info:  VK_NVX_image_view_handle
+info:    extension supported                    : 0
+info:  Queue families:
+info:    Graphics : 0
+info:    Transfer : 2
+info:    Sparse   : 0
+warn:  DXVK: No state cache file found
+info:  DXVK: Graphics pipeline libraries not supported
+info:  D3D9DeviceEx::ResetSwapChain:
+info:    Requested Presentation Parameters
+info:      - Width:              640
+info:      - Height:             480
+info:      - Format:             D3D9Format::Unknown
+info:      - Auto Depth Stencil: false
+info:                  ^ Format: D3D9Format::Unknown
+info:      - Windowed:           true
+info:  Presenter: Actual swap chain properties:
+info:    Format:       VK_FORMAT_B8G8R8A8_UNORM
+info:    Color space:  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+info:    Present mode: VK_PRESENT_MODE_IMMEDIATE_KHR
+info:    Buffer size:  640x480
+info:    Image count:  2
+info:    Exclusive FS: 0
+info:  Presenter: Actual swap chain properties:
+info:    Format:       VK_FORMAT_B8G8R8A8_UNORM
+info:    Color space:  VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+info:    Present mode: VK_PRESENT_MODE_IMMEDIATE_KHR
+info:    Buffer size:  640x480
+info:    Image count:  2
+info:    Exclusive FS: 0
+warn:  DXVK: Creating new state cache file
