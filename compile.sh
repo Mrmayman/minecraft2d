@@ -1,1 +1,1 @@
-g++ main.cpp -o ./bin/a.out -lSDL2 -lSDL2_image
+g++ main.cpp -o ./bin/a.out -lSDL2 -lSDL2_image -O2

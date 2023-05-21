@@ -14,7 +14,7 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
-    
+
     Contact Mrmayman at navneetkrishna22@gmail.com
 */
 
@@ -59,8 +59,11 @@ std::string GamePath;
 float camx = 0;
 float camy = 4096;
 int seed = 0;
+
 int xMouse;
 int yMouse;
+bool leftMouse;
+bool rightMouse;
 
 // arrays
 int16_t world[128][4096];
@@ -99,44 +102,44 @@ int main(int argc, char *argv[])
     seed = 1;
     FastNoiseLite noise(seed);
     nStartUp(noise);
-    
+
     entityTextures[0] = nLoadTexture("player.png");
     textures[0] = nLoadTexture("selector.png");
     textures[1] = nLoadTexture("grass.png");
     textures[2] = nLoadTexture("dirt.png");
     textures[3] = nLoadTexture("stone.png");
-    
+
     generateWorld(noise);
     Uint32 last_time = SDL_GetTicks();
-    Uint32 current_time, delta;    
-    
+    Uint32 current_time, delta;
+
     // spawn player
     entities[0].id = 1;
     entities[0].x = 8 * 64;
     entities[0].y = 66 * 64;
-    
+
     int frameCount = 0;
     Uint32 lastFrameTime = SDL_GetTicks();
-    
+
     while(running) {
-        
+
     // Calculate FPS
         Uint32 currentFrameTime = SDL_GetTicks();
         Uint32 elapsedFrameTime = currentFrameTime - lastFrameTime;
-    
+
         if (elapsedFrameTime >= 1000) {
             // One second has elapsed, so calculate FPS
             float fps = frameCount / (elapsedFrameTime / 1000.0f);
-    
+
             // Print the FPS value to the console
-            //printf("FPS: %f\n", fps);
-    
+            if(vsync == 0) {printf("FPS: %f\n", fps);}
+
             // Reset the frame count and last frame time
             frameCount = 0;
             lastFrameTime = currentFrameTime;
         }
         frameCount++;
-    
+
         current_time = SDL_GetTicks();
         delta = current_time - last_time;
         last_time = current_time;
@@ -162,24 +165,24 @@ if (isAPressed) {
     SDL_CONTROLLER_BUTTON_DPAD_DOWN
     SDL_CONTROLLER_BUTTON_DPAD_LEFT
     SDL_CONTROLLER_BUTTON_DPAD_RIGHT
-    
+
         SDL_CONTROLLER_BUTTON_LEFTSHOULDER: for the left shoulder button
     SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: for the right shoulder button
     SDL_CONTROLLER_BUTTON_LEFT_TRIGGER: for the left trigger
     SDL_CONTROLLER_BUTTON_RIGHT_TRIGGER: for the right trigger
-    
+
     shoulder is the hotbar, trigger is the action
-    
+
         Triangle button -> SDL_CONTROLLER_BUTTON_Y
     Circle button -> SDL_CONTROLLER_BUTTON_B
     Cross button -> SDL_CONTROLLER_BUTTON_A
     Square button -> SDL_CONTROLLER_BUTTON_X
-    
+
         SELECT button -> SDL_CONTROLLER_BUTTON_BACK
     START button -> SDL_CONTROLLER_BUTTON_START
     PS button -> SDL_CONTROLLER_BUTTON_GUIDE
         */
-        
+
         if (keyboard_state[SDL_SCANCODE_D]) { entities[0].speedX += xspeed * delta; }
         if (keyboard_state[SDL_SCANCODE_A]) { entities[0].speedX -= xspeed * delta; }
         joyxa = SDL_GameControllerGetAxis(gameController, SDL_CONTROLLER_AXIS_LEFTX);
@@ -192,31 +195,37 @@ if (isAPressed) {
         SDL_RenderClear(renderer);
         renderBlocks();
         tickEntities(delta);
-        
+
         SDL_GetGlobalMouseState(&xMouse,&yMouse);
         int windowX, windowY;
         SDL_GetWindowPosition(window, &windowX, &windowY);
         xMouse -= windowX;
         yMouse -= windowY;
-        
-        int selectedX = (64 * floor( (xMouse + camx) / 64 )) - camx;
-        int selectedY = windowHeight - ((64 * floor( ( (windowHeight - yMouse) + 16 + camy) / 64 )) - camy + 48);
-        int selectedBlockX = floor((selectedX + camx) / 64) - 4;
-        int selectedBlockY = floor((0 - selectedY + camy) / 64) + 4;
-        world[std::max(selectedBlockY, 0)][std::max(selectedBlockX,0)] = 0;
-        
+
+        Uint32 mouseState = SDL_GetMouseState(&xMouse, &yMouse);
+        leftMouse = (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+        rightMouse = (mouseState & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
+
+        int selectedX = (64 * floor( (xMouse + camx) / 64 )) - camx + nmod(windowWidth/2,64);
+        int selectedY = windowHeight -
+                        ((64 * floor( (windowHeight - yMouse + 16 + camy) / 64) ) -
+                        camy + nmod(windowHeight/2,64));
+
+        if(leftMouse) {
+            int selectedBlockX = floor((selectedX + camx) / 64) - (windowWidth / 128) + 1;
+            int selectedBlockY = floor((camy - selectedY) / 64) + (windowHeight / 128) + 1;
+            world[std::max(selectedBlockY, 0)][std::max(selectedBlockX,0)] = 0;
+        }
+
         SDL_Rect dest_rect = {
             (int) (selectedX),
             (int) (selectedY),
-            64, 64 };
+            65, 64 };
         SDL_RenderCopyEx(renderer, textures[0], NULL, &dest_rect, 0, NULL, SDL_FLIP_NONE);
-        
+
         while(SDL_PollEvent(&event)) {
             if(event.type == SDL_QUIT) {
                 running = false;
-            }
-            if (SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_A)) {
-                // Handle button A press
             }
         }
         entities[0].speedX += xspeed * (joyxa/32767) * delta;
@@ -296,7 +305,7 @@ SDL_Texture* nLoadTexture(std::string Path)
 void nStartUp(FastNoiseLite tempnoise)
 {
     tempnoise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-    
+
     // Initialize SDL2 and create a window and a renderer
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Init(SDL_INIT_GAMECONTROLLER);
@@ -312,7 +321,7 @@ void nStartUp(FastNoiseLite tempnoise)
     SDL_RenderPresent(renderer);
     running = true;
     keyboard_state = SDL_GetKeyboardState(NULL);
-    
+
     if (SDL_NumJoysticks() >= 1) {
         gameController = SDL_GameControllerOpen(0);
         if (gameController == nullptr) {
@@ -350,7 +359,7 @@ void tickEntities(Uint32 tempdelta)
 void moveEntity(int tempentity, Uint32 tempdelta2)
 {
     entities[tempentity].x += 0.4 * entities[tempentity].speedX * tempdelta2;
-    
+
     // x collision
     if(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
         while(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
@@ -363,9 +372,9 @@ void moveEntity(int tempentity, Uint32 tempdelta2)
         }
         entities[tempentity].speedX = 0;
     }
-    
+
     entities[tempentity].y += 0.4 * entities[tempentity].speedY * tempdelta2;
-    
+
     // y collision
     if(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
         while(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
