@@ -25,15 +25,9 @@
 
 // internal C libraries
 #include <stdbool.h>
-#include <math.h>
-#include <stdio.h>
-#include <time.h>
 
 // internal C++ libraries
 #include <iostream>
-#include <filesystem>
-#include <cstdlib>
-#include <string>
 
 // SDL initialization
 SDL_Event event;
@@ -59,6 +53,10 @@ std::string GamePath;
 float camx = 0;
 float camy = 4096;
 int seed = 0;
+Uint32 delta;
+
+int8_t selectorMode = 0;
+int8_t oldSelectorMode = 0;
 
 int xMouse;
 int yMouse;
@@ -73,19 +71,58 @@ SDL_Texture* nLoadTexture(std::string Path);
 void nStartUp(FastNoiseLite tempnoise);
 void generateWorld(FastNoiseLite tempnoise);
 void renderBlocks();
-void tickEntities(Uint32 tempdelta);
-void moveEntity(int tempentity, Uint32 tempdelta2);
+void tickEntities();
 int16_t getTile(float getTileX, float getTileY);
 int nmod(int n, int m);
+void nMouseTick();
 
 // constants
 const bool vsync = 1;
 
-struct Entity {
-    int id = 0;
-    float x, y, speedX, speedY, newx, newy;
+class Entity {
+public:
+    float x, y, speedX, speedY;
+    int id;
     int16_t direction = 1;
+
+    void move()
+    {
+        x += 0.4 * speedX * delta;
+
+        // x collision
+        if(getTile(x, y) > 0) {
+            while(getTile(x, y) > 0) {
+                if(speedX < 0) {
+                    x++;
+                } else {
+                    x--;
+                }
+                x = floor(x);
+            }
+            speedX = 0;
+        }
+
+        y += 0.4 * speedY * delta;
+
+        // y collision
+        if(getTile(x, y) > 0) {
+            while(getTile(x, y) > 0) {
+                if(speedY < 0) {
+                    y++;
+                } else {
+                    y--;
+                }
+                y = floor(y);
+            }
+            if(id == 1 && (keyboard_state[SDL_SCANCODE_W] or (joyya < -16000)) && speedY < 0) {
+                speedY = 3 * nmod(delta,2);
+            } else {
+                speedY = 0;
+            }
+        }
+    }
 };
+
 Entity entities[1024];
 
 #ifdef _WIN32
@@ -111,7 +148,7 @@ int main(int argc, char *argv[])
 
     generateWorld(noise);
     Uint32 last_time = SDL_GetTicks();
-    Uint32 current_time, delta;
+    Uint32 current_time;
 
     // spawn player
     entities[0].id = 1;
@@ -132,7 +169,7 @@ int main(int argc, char *argv[])
             float fps = frameCount / (elapsedFrameTime / 1000.0f);
 
             // Print the FPS value to the console
-            if(vsync == 0) {printf("FPS: %f\n", fps);}
+            if(vsync == 0) { std::cout << "FPS: " << fps << "\n"; }
 
             // Reset the frame count and last frame time
             frameCount = 0;
@@ -194,27 +231,33 @@ if (isAPressed) {
         SDL_SetRenderDrawColor(renderer, 180, 200, 255, 255);
         SDL_RenderClear(renderer);
         renderBlocks();
-        tickEntities(delta);
+        tickEntities();
 
-        SDL_GetGlobalMouseState(&xMouse,&yMouse);
-        int windowX, windowY;
-        SDL_GetWindowPosition(window, &windowX, &windowY);
-        xMouse -= windowX;
-        yMouse -= windowY;
-
-        Uint32 mouseState = SDL_GetMouseState(&xMouse, &yMouse);
-        leftMouse = (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
-        rightMouse = (mouseState & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
+        nMouseTick();
 
         int selectedX = (64 * floor( (xMouse + camx) / 64 )) - camx + nmod(windowWidth/2,64);
         int selectedY = windowHeight -
                         ((64 * floor( (windowHeight - yMouse + 16 + camy) / 64) ) -
                         camy + nmod(windowHeight/2,64));
 
-        if(leftMouse) {
-            int selectedBlockX = floor((selectedX + camx) / 64) - (windowWidth / 128) + 1;
-            int selectedBlockY = floor((camy - selectedY) / 64) + (windowHeight / 128) + 1;
-            world[std::max(selectedBlockY, 0)][std::max(selectedBlockX,0)] = 0;
+        if(leftMouse or ((bool) SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_A))) {
+            int selectedBlockY = std::max((int) floor((camy - selectedY) / 64) + (windowHeight / 128) + 1, 0);
+            int selectedBlockX = std::max((int) floor((selectedX + camx) / 64) - (windowWidth  / 128) + 1, 0);
+            int16_t currentBlock = world[selectedBlockY][selectedBlockX];
+            if(selectorMode == 0) {
+                if(currentBlock == 0) {
+                    selectorMode = -1;
+                } else {
+                    selectorMode = 1;
+                }
+            }
+            if(selectorMode == 1) {
+                world[selectedBlockY][selectedBlockX] = 0;
+            } else {
+                world[selectedBlockY][selectedBlockX] = 1;
+            }
+        } else {
+            selectorMode = 0;
         }
 
         SDL_Rect dest_rect = {
@@ -296,7 +339,7 @@ SDL_Texture* nLoadTexture(std::string Path)
 {
     std::string TempPath = GamePath;
     image = IMG_Load(TempPath.append(Path).c_str());
-    //printf("Loaded texture: %s\n",TempPath.c_str());
+    //std::cout << "Loaded texture:" << TempPath << "\n";
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, image);
     SDL_FreeSurface(image);
     return texture;
@@ -331,15 +374,15 @@ void nStartUp(FastNoiseLite tempnoise)
     }
 }
 
-void tickEntities(Uint32 tempdelta)
+void tickEntities()
 {
     for(int e = 0; e < 1024; e++) {
         if(entities[e].id == 0) {
             break;
         }
-        moveEntity(e, tempdelta);
-        entities[e].speedX *= 1 - (tempdelta * (1 - 0.98));
-        entities[e].speedY -= 0.01 * tempdelta;
+        entities[e].move();
+        entities[e].speedX *= 1 - (delta * (1 - 0.98));
+        entities[e].speedY -= 0.01 * delta;
         if(entities[e].speedX < 0) {
             entities[e].direction = -1;
         } else if(entities[e].speedX > 0) {
@@ -356,39 +399,15 @@ void tickEntities(Uint32 tempdelta)
     }
 }
 
-void moveEntity(int tempentity, Uint32 tempdelta2)
+void nMouseTick()
 {
-    entities[tempentity].x += 0.4 * entities[tempentity].speedX * tempdelta2;
+    SDL_GetGlobalMouseState(&xMouse,&yMouse);
+    int windowX, windowY;
+    SDL_GetWindowPosition(window, &windowX, &windowY);
+    xMouse -= windowX;
+    yMouse -= windowY;
 
-    // x collision
-    if(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
-        while(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
-            if(entities[tempentity].speedX < 0) {
-                entities[tempentity].x++;
-            } else {
-                entities[tempentity].x--;
-            }
-            entities[tempentity].x = floor(entities[tempentity].x);
-        }
-        entities[tempentity].speedX = 0;
-    }
-
-    entities[tempentity].y += 0.4 * entities[tempentity].speedY * tempdelta2;
-
-    // y collision
-    if(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
-        while(getTile(entities[tempentity].x, entities[tempentity].y) > 0) {
-            if(entities[tempentity].speedY < 0) {
-                entities[tempentity].y++;
-            } else {
-                entities[tempentity].y--;
-            }
-            entities[tempentity].y = floor(entities[tempentity].y);
-        }
-        if(entities[tempentity].id == 1 && (keyboard_state[SDL_SCANCODE_W] or (joyya < -16000)) && entities[tempentity].speedY < 0) {
-            entities[tempentity].speedY = 3 * nmod(tempdelta2,2);
-        } else {
-            entities[tempentity].speedY = 0;
-        }
-    }
+    Uint32 mouseState = SDL_GetMouseState(&xMouse, &yMouse);
+    leftMouse = (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+    rightMouse = (mouseState & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
 }
