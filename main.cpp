@@ -23,37 +23,45 @@
 #include <SDL2/SDL_image.h>
 #include "FastNoiseLite.h"
 
+// headers
+#include "entity.h"
+#include "tile.h"
+#include "movement.h"
+#include "nutils.h"
+#include "sdl_boilerplate.h"
+
 // internal C libraries
 #include <stdbool.h>
 
 // internal C++ libraries
 #include <iostream>
 
-// SDL initialization
+// Texture initialization
+SDL_Texture *textures[4];
+SDL_Texture *entityTextures[1];
+
+std::string GamePath;
+bool running;
+
+SDL_GameController* gameController = nullptr;
 SDL_Event event;
 SDL_Renderer *renderer;
 SDL_Rect dest_rect;
 SDL_Window *window;
 int windowWidth, windowHeight;
 SDL_Surface *image;
-bool running;
-const Uint8 *keyboard_state;
-SDL_GameController* gameController = nullptr;
 
 int joyxa;
 int joyya;
 int joyxb;
 int joyyb;
 
-// Texture initialization
-SDL_Texture *textures[4];
-SDL_Texture *entityTextures[1];
+const Uint8 *keyboard_state;
+Uint32 delta;
 
-std::string GamePath;
 float camx = 0;
 float camy = 4096;
 int seed = 0;
-Uint32 delta;
 
 int8_t selectorMode = 0;
 int8_t oldSelectorMode = 0;
@@ -68,60 +76,10 @@ int16_t world[128][4096];
 
 // functions
 SDL_Texture* nLoadTexture(std::string Path);
-void nStartUp(FastNoiseLite tempnoise);
 void generateWorld(FastNoiseLite tempnoise);
 void renderBlocks();
 void tickEntities();
 int16_t getTile(float getTileX, float getTileY);
-int nmod(int n, int m);
-void nMouseTick();
-
-// constants
-const bool vsync = 1;
-
-class Entity {
-public:
-    float x, y, speedX, speedY;
-    int id;
-    int16_t direction = 1;
-
-    void move()
-    {
-        x += 0.4 * speedX * delta;
-
-        // x collision
-        if(getTile(x, y) > 0) {
-            while(getTile(x, y) > 0) {
-                if(speedX < 0) {
-                    x++;
-                } else {
-                    x--;
-                }
-                x = floor(x);
-            }
-            speedX = 0;
-        }
-
-        y += 0.4 * speedY * delta;
-
-        // y collision
-        if(getTile(x, y) > 0) {
-            while(getTile(x, y) > 0) {
-                if(speedY < 0) {
-                    y++;
-                } else {
-                    y--;
-                }
-                y = floor(y);
-            }
-            if(id == 1 && (keyboard_state[SDL_SCANCODE_W] or (joyya < -16000)) && speedY < 0) {
-                speedY = 3 * nmod(delta,2);
-            } else {
-                speedY = 0;
-            }
-        }
-    }
-};
 
 Entity entities[1024];
 
@@ -137,8 +95,11 @@ int main(int argc, char *argv[])
     //std::cout << "Enter world seed:";
     //std::cin >> seed;
     seed = 1;
+
     FastNoiseLite noise(seed);
-    nStartUp(noise);
+    noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+
+    nStartUp();
 
     entityTextures[0] = nLoadTexture("player.png");
     textures[0] = nLoadTexture("selector.png");
@@ -169,7 +130,7 @@ int main(int argc, char *argv[])
             float fps = frameCount / (elapsedFrameTime / 1000.0f);
 
             // Print the FPS value to the console
-            if(vsync == 0) { std::cout << "FPS: " << fps << "\n"; }
+            //if(vsync == 0) { std::cout << "FPS: " << fps << "\n"; }
 
             // Reset the frame count and last frame time
             frameCount = 0;
@@ -329,12 +290,6 @@ int16_t getTile(float getTileX, float getTileY)
     return world[(int) floor(getTileY / 64)][(int) floor(getTileX / 64)];
 }
 
-int nmod(int a, int b)
-{
-    int r = a % b;
-    return r < 0 ? r + b : r;
-}
-
 SDL_Texture* nLoadTexture(std::string Path)
 {
     std::string TempPath = GamePath;
@@ -343,35 +298,6 @@ SDL_Texture* nLoadTexture(std::string Path)
     SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, image);
     SDL_FreeSurface(image);
     return texture;
-}
-
-void nStartUp(FastNoiseLite tempnoise)
-{
-    tempnoise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-
-    // Initialize SDL2 and create a window and a renderer
-    SDL_Init(SDL_INIT_VIDEO);
-    SDL_Init(SDL_INIT_GAMECONTROLLER);
-    window = SDL_CreateWindow("Minecraft 2D", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    //SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | (SDL_RENDERER_PRESENTVSYNC * vsync));
-
-    // Load the image file as a texture
-    char *buf = SDL_GetBasePath();
-    GamePath = buf;
-    GamePath.append("Assets/");
-    SDL_free(buf);
-    SDL_RenderPresent(renderer);
-    running = true;
-    keyboard_state = SDL_GetKeyboardState(NULL);
-
-    if (SDL_NumJoysticks() >= 1) {
-        gameController = SDL_GameControllerOpen(0);
-        if (gameController == nullptr) {
-        // Failed to open game controller
-            std::cout << "No controllers detected\n";
-        }
-    }
 }
 
 void tickEntities()
@@ -397,17 +323,4 @@ void tickEntities()
         SDL_Rect dest_rect = { (int) ((windowWidth / 2) + entities[e].x - camx - 16), (int) ((windowHeight / 2) + camy - entities[e].y - 64), 8*4, 32*4 };
         SDL_RenderCopyEx(renderer, entityTextures[entities[e].id - 1], NULL, &dest_rect, 0, NULL, flip);
     }
-}
-
-void nMouseTick()
-{
-    SDL_GetGlobalMouseState(&xMouse,&yMouse);
-    int windowX, windowY;
-    SDL_GetWindowPosition(window, &windowX, &windowY);
-    xMouse -= windowX;
-    yMouse -= windowY;
-
-    Uint32 mouseState = SDL_GetMouseState(&xMouse, &yMouse);
-    leftMouse = (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
-    rightMouse = (mouseState & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
 }
