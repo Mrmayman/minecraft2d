@@ -29,6 +29,7 @@
 #include "movement.h"
 #include "nutils.h"
 #include "sdl_boilerplate.h"
+#include "blockproperties.h"
 
 // internal C libraries
 #include <stdbool.h>
@@ -81,7 +82,7 @@ void renderBlocks();
 void tickEntities();
 int16_t getTile(float getTileX, float getTileY);
 
-Entity entities[1024];
+Entity* entities[1024];
 
 #ifdef _WIN32
 #include <windows.h>
@@ -100,21 +101,33 @@ int main(int argc, char *argv[])
     noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
 
     nStartUp();
+    initializeBlockProperties();
 
     entityTextures[0] = nLoadTexture("player.png");
-    textures[0] = nLoadTexture("selector.png");
+
+    // read block properties and load their textures
+    for (std::map<int, BlockProperties>::iterator it = blockProperties.begin(); it != blockProperties.end(); ++it) {
+        int blockID = it->first;
+        const auto& mapTexture = it->second.texture;
+        textures[blockID] = nLoadTexture(mapTexture);
+        // Use the blockID and texture as needed
+        // ...
+    }
+
+    /*textures[0] = nLoadTexture("selector.png");
     textures[1] = nLoadTexture("grass.png");
     textures[2] = nLoadTexture("dirt.png");
-    textures[3] = nLoadTexture("stone.png");
+    textures[3] = nLoadTexture("stone.png");*/
 
     generateWorld(noise);
     Uint32 last_time = SDL_GetTicks();
     Uint32 current_time;
 
     // spawn player
-    entities[0].id = 1;
-    entities[0].x = 8 * 64;
-    entities[0].y = 66 * 64;
+    entities[0] = new EntityPlayer();
+    entities[0]->id = 1;
+    entities[0]->x = 8 * 64;
+    entities[0]->y = 66 * 64;
 
     int frameCount = 0;
     Uint32 lastFrameTime = SDL_GetTicks();
@@ -181,13 +194,13 @@ if (isAPressed) {
     PS button -> SDL_CONTROLLER_BUTTON_GUIDE
         */
 
-        if (keyboard_state[SDL_SCANCODE_D]) { entities[0].speedX += xspeed * delta; }
-        if (keyboard_state[SDL_SCANCODE_A]) { entities[0].speedX -= xspeed * delta; }
+        if (keyboard_state[SDL_SCANCODE_D]) { entities[0]->speedX += xspeed * delta; }
+        if (keyboard_state[SDL_SCANCODE_A]) { entities[0]->speedX -= xspeed * delta; }
         joyxa = SDL_GameControllerGetAxis(gameController, SDL_CONTROLLER_AXIS_LEFTX);
         joyya = SDL_GameControllerGetAxis(gameController, SDL_CONTROLLER_AXIS_LEFTY);
 
-        camx += (entities[0].x - camx) * delta/128;
-        camy += (entities[0].y - camy) * delta/128;
+        camx += (entities[0]->x - camx) * delta/128;
+        camy += (entities[0]->y - camy) * delta/128;
 
         SDL_SetRenderDrawColor(renderer, 180, 200, 255, 255);
         SDL_RenderClear(renderer);
@@ -232,11 +245,14 @@ if (isAPressed) {
                 running = false;
             }
         }
-        entities[0].speedX += xspeed * (joyxa/32767) * delta;
+        entities[0]->speedX += xspeed * (joyxa/32767) * delta;
         SDL_RenderPresent(renderer);
     }
 
     // Destroy the texture, renderer, and window
+    for(int i = 0; i < (sizeof(entities) / sizeof(Entity)); i++) {
+        delete entities[i];
+    }
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
@@ -303,24 +319,24 @@ SDL_Texture* nLoadTexture(std::string Path)
 void tickEntities()
 {
     for(int e = 0; e < 1024; e++) {
-        if(entities[e].id == 0) {
+        if(entities[e] == nullptr) {
             break;
         }
-        entities[e].move();
-        entities[e].speedX *= 1 - (delta * (1 - 0.98));
-        entities[e].speedY -= 0.01 * delta;
-        if(entities[e].speedX < 0) {
-            entities[e].direction = -1;
-        } else if(entities[e].speedX > 0) {
-            entities[e].direction = 1;
+        entities[e]->move();
+        entities[e]->speedX *= 1 - (delta * (1 - 0.98));
+        entities[e]->speedY -= 0.01 * delta;
+        if(entities[e]->speedX < 0) {
+            entities[e]->direction = -1;
+        } else if(entities[e]->speedX > 0) {
+            entities[e]->direction = 1;
         }
         SDL_RendererFlip flip;
-        if (entities[e].direction < 0) {
+        if (entities[e]->direction < 0) {
             flip = SDL_FLIP_HORIZONTAL;
         } else {
             flip = SDL_FLIP_NONE;
         }
-        SDL_Rect dest_rect = { (int) ((windowWidth / 2) + entities[e].x - camx - 16), (int) ((windowHeight / 2) + camy - entities[e].y - 64), 8*4, 32*4 };
-        SDL_RenderCopyEx(renderer, entityTextures[entities[e].id - 1], NULL, &dest_rect, 0, NULL, flip);
+        SDL_Rect dest_rect = { (int) ((windowWidth / 2) + entities[e]->x - camx - 16), (int) ((windowHeight / 2) + camy - entities[e]->y - 64), 8*4, 32*4 };
+        SDL_RenderCopyEx(renderer, entityTextures[entities[e]->id - 1], NULL, &dest_rect, 0, NULL, flip);
     }
 }

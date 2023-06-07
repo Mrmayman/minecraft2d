@@ -7,7 +7,15 @@ public:
     int id;
     int16_t direction;
 
-    void move();
+    virtual void move();
+};
+
+
+class EntityPlayer : public Entity {
+public:
+    // Additional member variables or functions specific to PlayerEntity
+
+    void move() override;  // Override the move() method
 };
 
 //#endif  // ENTITY_H
