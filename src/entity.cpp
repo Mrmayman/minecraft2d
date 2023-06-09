@@ -1,5 +1,6 @@
 #include <iostream>
 #include <SDL2/SDL.h>
+#include <math.h>
 
 #include "entity.h"
 #include "tile.h"
