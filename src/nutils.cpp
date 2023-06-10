@@ -1,5 +1,7 @@
 #include <iostream>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <string>
 #include "nutils.h"
 #include "movement.h"
 #include "sdl_boilerplate.h"
@@ -11,7 +13,7 @@ void nStartUp()
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Init(SDL_INIT_GAMECONTROLLER);
     window = SDL_CreateWindow("Minecraft 2D", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    //SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
+    // SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | (SDL_RENDERER_PRESENTVSYNC * vsync));
 
     // Load the image file as a texture
@@ -23,10 +25,12 @@ void nStartUp()
     running = true;
     keyboard_state = SDL_GetKeyboardState(NULL);
 
-    if (SDL_NumJoysticks() >= 1) {
+    if (SDL_NumJoysticks() >= 1)
+    {
         gameController = SDL_GameControllerOpen(0);
-        if (gameController == nullptr) {
-        // Failed to open game controller
+        if (gameController == nullptr)
+        {
+            // Failed to open game controller
             std::cout << "No controllers detected\n";
         }
     }
@@ -34,7 +38,7 @@ void nStartUp()
 
 void nMouseTick()
 {
-    SDL_GetGlobalMouseState(&xMouse,&yMouse);
+    SDL_GetGlobalMouseState(&xMouse, &yMouse);
     int windowX, windowY;
     SDL_GetWindowPosition(window, &windowX, &windowY);
     xMouse -= windowX;
@@ -49,4 +53,14 @@ int nmod(int a, int b)
 {
     int r = a % b;
     return r < 0 ? r + b : r;
+}
+
+SDL_Texture *nLoadTexture(std::string Path)
+{
+    std::string TempPath = GamePath;
+    image = IMG_Load(TempPath.append(Path).c_str());
+    // std::cout << "Loaded texture:" << TempPath << "\n";
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, image);
+    SDL_FreeSurface(image);
+    return texture;
 }

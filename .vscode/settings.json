@@ -1,0 +1,5 @@
+{
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+    "editor.formatOnPaste": true,
+    "editor.formatOnSave": true
+}
