@@ -1,7 +1,10 @@
+#include <iostream>
+
 #include <SDL2/SDL.h>
 #include "tick.h"
 #include "nutils.h"
 #include "world.h"
+#include "blockproperties.h"
 
 SDL_Window *window;
 int windowWidth, windowHeight;
@@ -87,44 +90,34 @@ void tickEntities()
 
 void tickSelector()
 {
-    int selectedX = (64 * floor((xMouse + camx) / 64)) - camx + nmod(windowWidth / 2, 64);
-    int selectedY = windowHeight -
-                    ((64 * floor((windowHeight - yMouse + 16 + camy) / 64)) -
-                     camy + nmod(windowHeight / 2, 64));
+    int selectedBlockY = std::max((int)floor((nmod(windowHeight / 2, 64) - yMouse + camy) / 64) + (windowHeight / 128) + 1, 0);
+    int selectedBlockX = std::max((int)floor((xMouse - nmod(windowWidth / 2, 64) + camx) / 64) - (windowWidth / 128), 0);
+    int selectedX = (64 * selectedBlockX) + (windowWidth / 2) - camx;
+    int selectedY = (windowHeight / 2) - ((64 * selectedBlockY) - camy);
 
-    if (leftMouse or ((bool)SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_A)))
+    if (leftMouse ||
+     SDL_GameControllerGetButton(gameController, SDL_CONTROLLER_BUTTON_A))
     {
-        int selectedBlockY = std::max((int)floor((camy - selectedY) / 64) + (windowHeight / 128) + 1, 0);
-        int selectedBlockX = std::max((int)floor((selectedX + camx) / 64) - (windowWidth / 128) + 1, 0);
         int16_t currentBlock = world[selectedBlockY][selectedBlockX];
-        if (selectorMode == 0)
-        {
-            if (currentBlock == 0)
-            {
+        if (selectorMode == 0) {
+            if (currentBlock == 0) {
                 selectorMode = -1;
-            }
-            else
-            {
+            } else {
                 selectorMode = 1;
             }
         }
-        if (selectorMode == 1)
-        {
+        if (selectorMode == 1) {
             world[selectedBlockY][selectedBlockX] = 0;
-        }
-        else
-        {
+        } else if (!(blockProperties[world[selectedBlockY][selectedBlockX]].isBlock)) {
             world[selectedBlockY][selectedBlockX] = 1;
         }
-    }
-    else
-    {
+    } else {
         selectorMode = 0;
     }
 
     SDL_Rect dest_rect = {
-        (int)(selectedX),
-        (int)(selectedY),
+        selectedX,
+        selectedY,
         65, 64};
     SDL_RenderCopyEx(renderer, textures[0], NULL, &dest_rect, 0, NULL, SDL_FLIP_NONE);
 }
@@ -135,8 +128,7 @@ void tickMovementAndFPS()
     Uint32 currentFrameTime = SDL_GetTicks();
     Uint32 elapsedFrameTime = currentFrameTime - lastFrameTime;
 
-    if (elapsedFrameTime >= 1000)
-    {
+    if (elapsedFrameTime >= 1000) {
         // One second has elapsed, so calculate FPS
         float fps = frameCount / (elapsedFrameTime / 1000.0f);
 
