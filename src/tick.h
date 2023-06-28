@@ -19,7 +19,6 @@ extern int8_t oldSelectorMode;
 
 extern Uint32 lastFrameTime;
 extern int frameCount;
-extern Uint32 delta;
 extern Uint32 last_time;
 extern Uint32 current_time;
 
@@ -31,5 +30,7 @@ extern int joyxa;
 extern int joyya;
 extern int joyxb;
 extern int joyyb;
+
+extern int fps;
 
 #endif

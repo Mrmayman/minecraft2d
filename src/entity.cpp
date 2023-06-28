@@ -6,6 +6,33 @@
 #include "tile.h"
 #include "movement.h"
 #include "nutils.h"
+#include "sdl_boilerplate.h"
+#include "tick.h"
+
+void Entity::tick()
+{
+    move();
+    if(x < 2) { x = 2; }
+    speedX *= 1 - (delta * (1 - 0.98));
+    speedY -= 0.01 * delta;
+    if (speedX < 0) {
+        direction = -1;
+    } else if (speedX > 0) {
+        direction = 1;
+    }
+    SDL_RendererFlip flip;
+    if (direction < 0) {
+        flip = SDL_FLIP_HORIZONTAL;
+    } else {
+        flip = SDL_FLIP_NONE;
+    }
+    SDL_Rect dest_rect = {
+        (int)((windowWidth / 2) + x - camx - 16),
+        (int)((windowHeight / 2) + camy - y - 64),
+        width, height
+    };
+    SDL_RenderCopyEx(renderer, entityTextures[id - 1], NULL, &dest_rect, 0, NULL, flip);
+}
 
 void Entity::move()
 {
@@ -42,7 +69,6 @@ void Entity::move()
 
 void EntityPlayer::move() {
     x += 0.4 * speedX * delta;
-
     // x collision
     if(getTile(x, y) > 0) {
         while(getTile(x, y) > 0) {
@@ -51,7 +77,6 @@ void EntityPlayer::move() {
             } else {
                 x--;
             }
-            x = floor(x);
         }
         speedX = 0;
     }

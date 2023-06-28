@@ -47,9 +47,12 @@ bool running;
 SDL_Event event;
 SDL_Rect dest_rect;
 SDL_Surface *image;
+TTF_Font* font;
 
 int seed = 0;
 
+float delta;
+int fps;
 int xMouse;
 int yMouse;
 bool leftMouse;
@@ -106,6 +109,7 @@ int main(int argc, char *argv[])
 
     lastFrameTime = SDL_GetTicks();
 
+    std::cout << "Started Game\n";
     while (running)
     {
         tickMovementAndFPS();
@@ -115,7 +119,6 @@ int main(int argc, char *argv[])
         tickEntities();
         nMouseTick();
         tickSelector();
-
         while (SDL_PollEvent(&event))
         {
             if (event.type == SDL_QUIT)
@@ -124,6 +127,8 @@ int main(int argc, char *argv[])
             }
         }
         entities[0]->speedX += xspeed * (joyxa / 32767) * delta;
+        nDrawText(13, 13, std::to_string(fps) + std::string(" fps"), {64,64,64});
+        nDrawText(10, 10, std::to_string(fps) + std::string(" fps"), {255,255,255});
         SDL_RenderPresent(renderer);
     }
 

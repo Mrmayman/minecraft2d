@@ -7,6 +7,6 @@ extern int joyxb;
 extern int joyyb;
 
 extern const Uint8 *keyboard_state;
-extern Uint32 delta;
+extern float delta;
 
 #endif
