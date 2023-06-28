@@ -7,4 +7,4 @@ x86_64-w64-mingw32-g++ -o\
 -L./SDL2_root/x86_64-w64-mingw32/lib/ \
 -L./SDL2_image/x86_64-w64-mingw32/lib/ \
 -L./SDL2_ttf/x86_64-w64-mingw32/lib/ \
--lSDL2 -lSDL2_image -lSDL2_ttf -static-libstdc++ -g
+-lSDL2 -lSDL2_image -lSDL2_ttf -static-libstdc++
