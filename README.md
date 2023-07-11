@@ -4,7 +4,9 @@ A 2D Minecraft clone in C++ and SDL2, which also supports controllers!
 
 ## OS Support
 **Windows** : Yes
+
 **Linux** : Yes
+
 **Everything else** : Use [Wine](https://www.winehq.org/) and run the Windows version.
 
 ## Build
