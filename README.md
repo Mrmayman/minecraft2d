@@ -3,13 +3,9 @@
 A 2D Minecraft clone in C++ and SDL2, which also supports controllers!
 
 ## OS Support
-minecraft2D officially supports Windows and Linux, but you can run the Windows version in wine for an unsupported platform.
-The Windows version is tested on both Windows 11 and Wine.
-The Linux version is tested on Linux Mint Cinnamon.
-
-I will not make a native macOS version because:
-- I don't have a Mac and can't afford one
-- The Windows version should work perfectly fine in Wine
+**Windows** : Yes
+**Linux** : Yes
+**Everything else** : Use [Wine](https://www.winehq.org/) and run the Windows version.
 
 ## Build
 To build project:
